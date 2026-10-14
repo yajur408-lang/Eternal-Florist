@@ -141,17 +141,53 @@ function createApp() {
     }
   });
 
+  // Step 1: bag -> PENDING order -> straight to eSewa. No personal data is asked for before payment.
   app.post('/api/checkout/initiate', checkoutLimiter, noStore, async (req, res) => {
-    const b = req.body || {};
     const user = req.session && req.session.user;
-    if (req.session.ageBlocked) return res.status(403).json({ error: "We can't take this order online. Please ask a parent or guardian to contact the shop." });
+    try {
+      const { order } = await orders.createPending({ items: req.body.items, userId: user ? user.id : null });
+      res.json({ orderId: order.public_id, ...esewa.buildForm({ amount: order.amount, transactionUuid: order.transaction_uuid, publicId: order.public_id }) });
+    } catch (e) {
+      if (e instanceof orders.UserError) return res.status(400).json({ error: e.message });
+      throw e;
+    }
+  });
+
+  const ORDER_ID_RE = /^[A-Za-z0-9_-]{16}$/;
+
+  app.get('/api/order/:publicId', noStore, async (req, res) => {
+    if (!ORDER_ID_RE.test(req.params.publicId)) return res.status(404).json({ error: 'not found' });
+    const { rows } = await db.query(
+      `select o.status, o.fulfillment, o.amount, o.created_at, o.details_at,
+              coalesce(json_agg(json_build_object('name', i.name, 'qty', i.qty)) filter (where i.name is not null), '[]') as items
+       from orders o left join order_items i on i.order_id=o.id where o.public_id=$1 group by o.id`,
+      [req.params.publicId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'not found' });
+    const o = rows[0];
+    res.json({
+      status: o.status,
+      fulfillment: o.fulfillment,
+      amount: o.amount,
+      needsDetails: o.status === 'PAID' && !o.details_at,
+      items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
+    });
+  });
+
+  // Step 3: after a confirmed payment, collect delivery details (once). Age check first (COPPA).
+  app.post('/api/order/:publicId/details', checkoutLimiter, noStore, async (req, res) => {
+    if (!ORDER_ID_RE.test(req.params.publicId)) return res.status(404).json({ error: 'not found' });
+    const b = req.body;
+    const user = req.session && req.session.user;
+    const blocked = "We can't take your details online. Please ask a parent or guardian to message the shop on WhatsApp about this order.";
+    if (req.session.ageBlocked) return res.status(403).json({ error: blocked });
     if (!user) {
       const age = ageFromDob(b.dob);
       if (age == null) return res.status(400).json({ error: 'Please enter your date of birth.' });
       if (age < 13) {
-        // COPPA: collect nothing. Remember the block for this session only.
+        // COPPA: store nothing from this submission; block retries in this session.
         await session.setAgeBlocked(req);
-        return res.status(403).json({ error: "We can't take this order online. Please ask a parent or guardian to contact the shop." });
+        return res.status(403).json({ error: blocked });
       }
     }
     const customer = {
@@ -165,26 +201,9 @@ function createApp() {
     if (!PHONE_RE.test(customer.phone)) return res.status(400).json({ error: 'Please enter a phone number we can call for delivery.' });
     if (!EMAIL_RE.test(customer.email)) return res.status(400).json({ error: 'Please enter a valid email address.' });
     if (customer.address.length < 5) return res.status(400).json({ error: 'Please enter your delivery address.' });
-    try {
-      const { order } = await orders.createPending({ items: b.items, customer, userId: user ? user.id : null });
-      res.json({ orderId: order.public_id, ...esewa.buildForm({ amount: order.amount, transactionUuid: order.transaction_uuid, publicId: order.public_id }) });
-    } catch (e) {
-      if (e instanceof orders.UserError) return res.status(400).json({ error: e.message });
-      throw e;
-    }
-  });
-
-  app.get('/api/order/:publicId', noStore, async (req, res) => {
-    if (!/^[A-Za-z0-9_-]{16}$/.test(req.params.publicId)) return res.status(404).json({ error: 'not found' });
-    const { rows } = await db.query(
-      `select o.status, o.fulfillment, o.amount, o.created_at,
-              coalesce(json_agg(json_build_object('name', i.name, 'qty', i.qty)) filter (where i.name is not null), '[]') as items
-       from orders o left join order_items i on i.order_id=o.id where o.public_id=$1 group by o.id`,
-      [req.params.publicId]
-    );
-    if (!rows[0]) return res.status(404).json({ error: 'not found' });
-    const o = rows[0];
-    res.json({ status: o.status, fulfillment: o.fulfillment, amount: o.amount, items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items });
+    const ok = await orders.addDetails(req.params.publicId, customer);
+    if (!ok) return res.status(409).json({ error: 'This order is not paid yet, or its details were already saved.' });
+    res.json({ ok: true });
   });
 
   // ---------- eSewa return URLs ----------

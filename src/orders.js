@@ -35,15 +35,16 @@ class UserError extends Error {}
 const newPublicId = () => crypto.randomBytes(12).toString('base64url');
 const newTransactionUuid = () => `${Date.now().toString(36)}-${crypto.randomBytes(6).toString('hex')}`;
 
-async function createPending({ items, customer, userId }) {
+// Step 1: the order is created from the bag alone. Customer details come after payment.
+async function createPending({ items, userId }) {
   const q = await quote(items);
   const publicId = newPublicId();
   const transactionUuid = newTransactionUuid();
   const order = await db.tx(async (tq) => {
     const { rows } = await tq(
-      `insert into orders (public_id, transaction_uuid, user_id, amount, customer_name, phone, email, address, note)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id, public_id, transaction_uuid, amount`,
-      [publicId, transactionUuid, userId || null, q.total, customer.name, customer.phone, customer.email, customer.address, customer.note]
+      `insert into orders (public_id, transaction_uuid, user_id, amount)
+       values ($1,$2,$3,$4) returning id, public_id, transaction_uuid, amount`,
+      [publicId, transactionUuid, userId || null, q.total]
     );
     for (const l of q.lines) {
       await tq('insert into order_items (order_id, product_id, name, unit_price, qty) values ($1,$2,$3,$4,$5)', [rows[0].id, l.id, l.name, l.unitPrice, l.qty]);
@@ -53,31 +54,70 @@ async function createPending({ items, customer, userId }) {
   return { order, quote: q };
 }
 
-// Atomic: only the request that flips PENDING -> PAID sends emails.
+async function itemList(orderId) {
+  const items = (await db.query('select name, unit_price, qty from order_items where order_id=$1', [orderId])).rows;
+  return items.map((i) => `${i.qty} x ${i.name}  Rs. ${i.unit_price * i.qty}`).join('\n');
+}
+
+// Step 2, atomic: only the request that flips PENDING -> PAID counts.
 async function fulfillOrder(orderId, esewaRef) {
   const { rows, rowCount } = await db.query(
     `update orders set status='PAID', paid_at=now(), esewa_ref=$2 where id=$1 and status='PENDING' returning *`,
     [orderId, esewaRef]
   );
   if (rowCount !== 1) return false;
-  const order = rows[0];
-  const items = (await db.query('select name, unit_price, qty from order_items where order_id=$1', [order.id])).rows;
-  const list = items.map((i) => `${i.qty} x ${i.name}  Rs. ${i.unit_price * i.qty}`).join('\n');
   // Made to order: no stock adjustment (see OPEN_QUESTIONS.md).
+  // Details are usually added after payment; if they already exist (e.g. restored order), confirm now.
+  if (rows[0].details_at) await sendConfirmation(rows[0]);
+  log.info('order paid', { orderId: rows[0].id });
+  return true;
+}
+
+// Step 3: delivery details, accepted once, only on a PAID order.
+async function addDetails(publicId, customer) {
+  const { rows, rowCount } = await db.query(
+    `update orders set customer_name=$2, phone=$3, email=$4, address=$5, note=$6, details_at=now()
+     where public_id=$1 and status='PAID' and details_at is null returning *`,
+    [publicId, customer.name, customer.phone, customer.email, customer.address, customer.note]
+  );
+  if (rowCount !== 1) return false;
+  await sendConfirmation(rows[0]);
+  return true;
+}
+
+async function sendConfirmation(order) {
+  const list = await itemList(order.id);
   await mailer.sendTransactional({
     to: order.email,
     subject: `Order ${order.public_id.slice(0, 8).toUpperCase()} confirmed`,
-    body: `Hi ${order.customer_name},\n\nThank you! Your eSewa payment went through and your order is confirmed.\n\n${list}\nTotal paid: Rs. ${order.amount}\n\nDeliver to: ${order.address}\n${order.note ? `Your note: ${order.note}\n` : ''}\nWe'll message you on ${order.phone} about delivery.\n\nOrder status: ${config.baseUrl}/payment-success?order=${order.public_id}`,
+    body: `Hi ${order.customer_name},
+
+Thank you! Your eSewa payment went through and your order is confirmed.
+
+${list}
+Total paid: Rs. ${order.amount}
+
+Deliver to: ${order.address}
+${order.note ? `Your note: ${order.note}
+` : ''}
+We'll message you on ${order.phone} about delivery.
+
+Order status: ${config.baseUrl}/payment-success?order=${order.public_id}`,
   });
   if (config.ownerNotifyEmail) {
     await mailer.sendTransactional({
       to: config.ownerNotifyEmail,
       subject: `New paid order: Rs. ${order.amount}`,
-      body: `${list}\n\nCustomer: ${order.customer_name}\nPhone: ${order.phone}\nAddress: ${order.address}\nNote: ${order.note}\n\nOpen ${config.baseUrl}/admin`,
+      body: `${list}
+
+Customer: ${order.customer_name}
+Phone: ${order.phone}
+Address: ${order.address}
+Note: ${order.note}
+
+Open ${config.baseUrl}/admin`,
     });
   }
-  log.info('order paid', { orderId: order.id });
-  return true;
 }
 
 async function markFailed(orderId) {
@@ -117,4 +157,4 @@ async function reconcilePending({ minAgeSeconds = 120 } = {}) {
   return results;
 }
 
-module.exports = { quote, createPending, fulfillOrder, markFailed, reconcileOne, reconcilePending, UserError };
+module.exports = { quote, createPending, fulfillOrder, addDetails, markFailed, reconcileOne, reconcilePending, UserError };

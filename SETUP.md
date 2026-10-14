@@ -28,7 +28,23 @@ npm run e2e
 Screenshots and `e2e-report.txt` are written to `artifacts/`.
 
 ### Try a real sandbox payment (you, not the build)
-Set `ESEWA_MODE=sandbox` and restart. Buy the combo set and log in on eSewa's test page with the **test credentials from eSewa's docs** (https://developer.esewa.com.np/pages/Epay): eSewa ID `9711111111`, password `Nepal@123`, OTP token `123456`. I didn't do this step myself because it means signing in to a third-party site. I did check that eSewa's sandbox accepts this app's signed form (HTTP 302 to its checkout) and that its status API answers.
+Set `ESEWA_MODE=sandbox` and restart. Buy the combo set. Checkout goes straight to eSewa with no forms; delivery details are asked for only after the payment is confirmed. Log in on eSewa's test page with the **test credentials from eSewa's docs** (https://developer.esewa.com.np/pages/Epay): eSewa ID `9711111111`, password `Nepal@123`, OTP token `123456`. I didn't do this step myself because it means signing in to a third-party site. I did check that eSewa's sandbox accepts this app's signed form (HTTP 302 to its checkout) and that its status API answers.
+
+## 1b. Connect Supabase (project czfsedinknylomtihagl)
+The shop's tables go in a schema called `shop`, not `public`. Supabase serves `public` through its auto-generated Data API to anyone holding the project's anon key; `shop` is not exposed. Don't add `shop` under Settings > API > Exposed schemas.
+
+1. Supabase Dashboard > **Connect** (top bar) > **Session pooler** (port 5432). Copy the URI. The transaction pooler (6543) is not supported, because the app sets `search_path` per connection.
+2. Dashboard > Project Settings > Database > **SSL Configuration** > *Download certificate*. Save it as `shop/data/supabase-ca.crt` (`data/` is gitignored).
+3. In `shop/.env` (never in chat, code or git):
+   ```
+   MIGRATION_DATABASE_URL=<session pooler URI with the postgres password>
+   DATABASE_URL=<same URI for now; switch to the oohflorist_app role after step 5>
+   DATABASE_CA_CERT=./data/supabase-ca.crt
+   ```
+4. Create the tables: `npm run migrate`
+5. Least privilege: open the Supabase **SQL Editor**, paste `db/roles.sql` (change the password first) and run it. Then set `DATABASE_URL` to the `oohflorist_app` connection string shown at the bottom of that file.
+6. Restart with `npm start`. Orders now land in Supabase (Table Editor > schema `shop`).
+7. Backups: the Supabase Pro plan includes daily backups (the Free plan has none, so use `npm run backup`). Billing alerts: Organization > Billing > enable the **spend cap** and usage emails.
 
 ## 2. Production deployment (Render)
 1. **Database.** Create a Render Postgres instance (a paid plan, so you get **daily automated backups**; check the current retention for your plan). Copy the *external* URL; that's the admin URL.

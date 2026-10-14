@@ -6,6 +6,8 @@ const path = require('path');
 const db = require('./db');
 
 const SCHEMA = `
+create schema if not exists shop;
+set search_path to shop;
 create table if not exists users (
   id bigserial primary key,
   email text not null unique,
@@ -73,7 +75,13 @@ create table if not exists email_suppressions (
 create table if not exists pow_used (
   id text primary key,
   expires_at timestamptz not null
-)
+);
+alter table orders add column if not exists details_at timestamptz;
+alter table orders alter column customer_name drop not null;
+alter table orders alter column phone drop not null;
+alter table orders alter column email drop not null;
+alter table orders alter column address drop not null;
+alter table orders alter column note drop not null
 `;
 
 async function migrate() {

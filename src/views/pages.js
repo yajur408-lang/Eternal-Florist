@@ -105,28 +105,14 @@ const dobField = () => html`
   </div>`;
 
 function checkout(ctx) {
-  const u = ctx.session && ctx.session.user;
   const body = html`
-  <section class="page checkout">
+  <section class="page narrow checkout">
     <h1>Checkout</h1>
-    <form class="form checkout-form" data-checkout-form novalidate>
-      <fieldset>
-        <legend>Your details</legend>
-        <div class="field"><label for="name">Full name</label><input id="name" name="name" required maxlength="80" autocomplete="name" value="${u ? u.name : ''}"></div>
-        <div class="field"><label for="phone">Phone (for delivery)</label><input id="phone" name="phone" type="tel" required maxlength="20" autocomplete="tel" inputmode="tel"></div>
-        <div class="field"><label for="email">Email (for your receipt)</label><input id="email" name="email" type="email" required maxlength="120" autocomplete="email" value="${u ? u.email : ''}"></div>
-        ${u ? '' : dobField()}
-      </fieldset>
-      <fieldset>
-        <legend>Delivery</legend>
-        <div class="field"><label for="address">Delivery address</label><textarea id="address" name="address" required maxlength="300" rows="3" autocomplete="street-address"></textarea></div>
-        <p class="hint">Delivery area and charges: ${business.pending.deliveryAreas || pending('delivery areas and fees')}</p>
-        <div class="field"><label for="note">Note for the shop (optional)</label><textarea id="note" name="note" maxlength="500" rows="3" placeholder="Colours, a message for the card, a date you need it by..."></textarea></div>
-      </fieldset>
+    <form class="checkout-pay" data-checkout-form novalidate>
       <aside class="summary" aria-labelledby="sum-title">
         <h2 id="sum-title">Order summary</h2>
         <div data-summary><p class="muted">Loading...</p></div>
-        <p class="hint">You'll pay with eSewa. We never see your eSewa login.</p>
+        <p class="hint">You'll pay on eSewa's own page. We never see your eSewa login. After paying, you'll come back here to add your delivery details.</p>
         <p class="form-error" role="alert" data-form-error></p>
         <button type="submit" class="btn btn-primary btn-block" data-pay-btn>Pay with eSewa</button>
         <p class="hint">By paying you agree to our <a href="/policies/terms">terms of sale</a> and <a href="/policies/refunds">refund policy</a>.</p>
@@ -137,11 +123,26 @@ function checkout(ctx) {
 }
 
 function paymentStatus(ctx, publicId) {
+  const u = ctx.session && ctx.session.user;
   const body = html`
   <section class="page narrow status-page" data-order-status data-order="${publicId}">
     <h1 data-status-title>Checking your payment</h1>
     <p data-status-text>This takes a few seconds. Please keep this page open.</p>
     <div data-status-detail></div>
+    <form class="form" data-details-form hidden novalidate>
+      <fieldset>
+        <legend>Where should we deliver?</legend>
+        <div class="field"><label for="name">Full name</label><input id="name" name="name" required maxlength="80" autocomplete="name" value="${u ? u.name : ''}"></div>
+        <div class="field"><label for="phone">Phone (for delivery)</label><input id="phone" name="phone" type="tel" required maxlength="20" autocomplete="tel" inputmode="tel"></div>
+        <div class="field"><label for="email">Email (for your receipt)</label><input id="email" name="email" type="email" required maxlength="120" autocomplete="email" value="${u ? u.email : ''}"></div>
+        ${u ? '' : dobField()}
+        <div class="field"><label for="address">Delivery address</label><textarea id="address" name="address" required maxlength="300" rows="3" autocomplete="street-address"></textarea></div>
+        <p class="hint">Delivery area and charges: ${business.pending.deliveryAreas || pending('delivery areas and fees')}</p>
+        <div class="field"><label for="note">Note for the shop (optional)</label><textarea id="note" name="note" maxlength="500" rows="3" placeholder="Colours, a message for the card, a date you need it by..."></textarea></div>
+      </fieldset>
+      <p class="form-error" role="alert" data-details-error></p>
+      <button type="submit" class="btn btn-primary btn-block">Send my details</button>
+    </form>
     <p><a class="btn btn-ghost" href="/">Back to the shop</a></p>
   </section>`;
   return layout(ctx, { title: 'Order status', body });
@@ -309,10 +310,11 @@ function admin(ctx, { orders, filter }) {
           <span>${new Date(o.created_at).toLocaleString('en-GB')}</span>
           <span>${npr(o.amount)}</span>
           <span class="tag tag-${o.status.toLowerCase()}">${STATUS_TEXT[o.status]}</span>
+          ${o.status === 'PAID' && !o.details_at ? html`<span class="tag">Waiting for delivery details</span>` : ''}
         </div>
         <p>${o.items}</p>
-        <p>${o.customer_name} · ${o.phone} · ${o.email}</p>
-        <p>${o.address}</p>
+        ${o.details_at ? html`<p>${o.customer_name} · ${o.phone} · ${o.email}</p>
+        <p>${o.address}</p>` : ''}
         ${o.note ? html`<p class="muted">Note: ${o.note}</p>` : ''}
         ${o.esewa_ref ? html`<p class="muted">eSewa ref: ${o.esewa_ref}</p>` : ''}
         ${o.status === 'PAID' ? html`

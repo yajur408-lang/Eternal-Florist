@@ -281,3 +281,6 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { border-color
 /* Iteration 1 fixes from 360px review */
 .summary-line span:last-child, .total-row span:last-child { white-space: nowrap; }
 @media (max-width: 767px) { .custom-photo { max-width: 220px; } }
+
+[hidden] { display: none !important; }
+.checkout-pay .summary { max-width: 520px; }

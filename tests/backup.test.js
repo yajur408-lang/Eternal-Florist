@@ -17,6 +17,7 @@ test('backup then restore into a fresh DB reproduces orders', async () => {
   await migrate();
   const { order } = await orders.createPending({ items: [{ id: 'hello-kitty-bouquet-combo', qty: 3 }], customer: { name: 'B', phone: '9800000000', email: 'b@x.test', address: 'Addr 1', note: 'n' } });
   await orders.fulfillOrder(order.id, 'REF');
+  await orders.addDetails(order.public_id, { name: 'B', phone: '9800000000', email: 'b@x.test', address: 'Addr 1', note: 'n' });
   const file = path.join(os.tmpdir(), `oohflorist-backup-${Date.now()}.json`);
   const counts = await backup(file);
   assert.strictEqual(counts.orders, 1);

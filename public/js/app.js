@@ -142,10 +142,7 @@
     checkoutForm.addEventListener('submit', function (e) {
       e.preventDefault();
       errorBox.textContent = '';
-      if (!checkoutForm.reportValidity()) return;
-      var fd = new FormData(checkoutForm);
       var body = { items: readBag() };
-      ['name', 'phone', 'email', 'address', 'note', 'dob'].forEach(function (k) { if (fd.has(k)) body[k] = fd.get(k); });
       payBtn.disabled = true;
       payBtn.textContent = 'Taking you to eSewa...';
       post('/api/checkout/initiate', body).then(function (res) {
@@ -174,6 +171,14 @@
       fetch('/api/order/' + encodeURIComponent(statusPage.dataset.order), { credentials: 'same-origin' })
         .then(function (r) { if (!r.ok) throw new Error('not found'); return r.json(); })
         .then(function (o) {
+          if (o.status === 'PAID' && o.needsDetails) {
+            statusPage.dataset.state = 'paid';
+            title.textContent = 'Payment received';
+            text.textContent = 'Thank you! Now tell us where to deliver your order.';
+            writeBag([]);
+            showDetailsForm();
+            return;
+          }
           if (o.status === 'PAID') {
             statusPage.dataset.state = 'paid';
             title.textContent = 'Thank you, your order is confirmed';
@@ -202,6 +207,27 @@
           title.textContent = 'Order not found';
           text.textContent = 'Please check the link, or contact us.';
         });
+    };
+    var detailsForm = statusPage.querySelector('[data-details-form]');
+    var showDetailsForm = function () {
+      if (!detailsForm.hidden) return;
+      detailsForm.hidden = false;
+      detailsForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var err = detailsForm.querySelector('[data-details-error]');
+        err.textContent = '';
+        if (!detailsForm.reportValidity()) return;
+        var fd = new FormData(detailsForm);
+        var payload = {};
+        ['name', 'phone', 'email', 'address', 'note', 'dob'].forEach(function (k) { if (fd.has(k)) payload[k] = fd.get(k); });
+        var btn = detailsForm.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        post('/api/order/' + encodeURIComponent(statusPage.dataset.order) + '/details', payload).then(function () {
+          detailsForm.hidden = true;
+          tries = 0;
+          poll();
+        }).catch(function (x) { err.textContent = x.message; btn.disabled = false; });
+      });
     };
     poll();
   }

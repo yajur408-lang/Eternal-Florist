@@ -60,12 +60,17 @@ test('server computes totals from DB; client prices ignored; unpriced items refu
   await assert.rejects(orders.quote([{ id: 'hello-kitty-bouquet-combo', qty: -1 }]), orders.UserError);
 });
 
-test('fulfillOrder is atomic and idempotent (emails sent once)', async () => {
+test('pay first, then details: fulfil is atomic, details accepted once, one confirmation email', async () => {
   let sent = 0;
   mailer._setTransport({ sendMail: async () => { sent++; } });
-  const { order } = await orders.createPending({ items: [{ id: 'hello-kitty-bouquet-combo', qty: 1 }], customer: { name: 'T', phone: '9800000000', email: 't@x.test', address: 'Somewhere', note: '' } });
+  const { order } = await orders.createPending({ items: [{ id: 'hello-kitty-bouquet-combo', qty: 1 }] });
+  const customer = { name: 'T', phone: '9800000000', email: 't@x.test', address: 'Somewhere', note: '' };
+  assert.strictEqual(await orders.addDetails(order.public_id, customer), false, 'no details before payment');
   const results = await Promise.all([orders.fulfillOrder(order.id, 'R1'), orders.fulfillOrder(order.id, 'R1'), orders.fulfillOrder(order.id, 'R1')]);
-  assert.deepStrictEqual(results.filter(Boolean).length, 1);
+  assert.strictEqual(results.filter(Boolean).length, 1);
+  assert.strictEqual(sent, 0, 'no email until details exist');
+  assert.strictEqual(await orders.addDetails(order.public_id, customer), true);
+  assert.strictEqual(await orders.addDetails(order.public_id, { ...customer, address: 'Hijack' }), false, 'details cannot be overwritten');
   assert.strictEqual(sent, 1);
   assert.strictEqual(await orders.markFailed(order.id), false, 'paid order cannot become FAILED');
 });

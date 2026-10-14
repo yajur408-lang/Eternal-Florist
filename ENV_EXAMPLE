@@ -11,6 +11,8 @@ APP_SECRET=change-me
 # Postgres connection for the APP role (least privilege, see db/roles.sql).
 # Leave empty locally to use the built-in PGlite database in ./data/pglite.
 DATABASE_URL=
+# Supabase CA certificate (Project Settings > Database > SSL). Required to verify TLS.
+DATABASE_CA_CERT=
 # Only used by `npm run migrate`. Owner role. Do NOT set this on the deployed web service.
 MIGRATION_DATABASE_URL=
 
