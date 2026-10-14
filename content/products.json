@@ -1,0 +1,92 @@
+[
+  {
+    "id": "hello-kitty-bouquet-combo",
+    "name": "Hello Kitty & Bouquet combo set",
+    "description": "A blue bouquet with a Hello Kitty, sold together as a combo set.",
+    "price_npr": 1050,
+    "image": "hello-kitty-combo.webp",
+    "image_alt": "Blue handmade flower bouquet with white ribbons and fairy lights, next to a Hello Kitty",
+    "source_note": "Instagram reel caption: \"Hello kitty & Bouquet\", \"Combo set: Rs.1050/-\""
+  },
+  {
+    "id": "melody-flower-bag",
+    "name": "Melody Flower bag",
+    "description": "A pink gift bag filled with flowers and a My Melody plush.",
+    "price_npr": null,
+    "image": "melody-flower-bag.webp",
+    "image_alt": "Pink flower bag with a My Melody plush, pink and blue flowers and a lace bow",
+    "source_note": "Instagram reel caption: \"This is my first time making Melody Flower bag\""
+  },
+  {
+    "id": "tulip-bouquet",
+    "name": "Tulip Bouquet",
+    "description": "Peach tulips that light up, wrapped in white.",
+    "price_npr": null,
+    "image": "tulip-bouquet.webp",
+    "image_alt": "Bouquet of glowing peach tulips wrapped in white paper",
+    "source_note": "Instagram reel caption: \"Tulip Bouquet\""
+  },
+  {
+    "id": "17-roses-bouquet",
+    "name": "17 roses bouquet",
+    "description": "Seventeen red roses with a silver trim and a white ribbon.",
+    "price_npr": null,
+    "image": "red-roses.webp",
+    "image_alt": "Round bouquet of red roses with silver trim and a white ribbon",
+    "source_note": "Instagram reel caption: \"Come let's pack 17 roses bou...\" (caption cut off)"
+  },
+  {
+    "id": "blue-flower-basket",
+    "name": "Flower basket with teddy",
+    "description": "A basket of blue and white lilies with a small teddy and fairy lights.",
+    "price_npr": null,
+    "image": "blue-basket-teddy.webp",
+    "image_alt": "Basket of blue and white handmade lilies with a small white teddy and warm fairy lights",
+    "source_note": "Instagram post (no caption visible). Name is provisional, based on the \"Flower Basket\" highlight"
+  },
+  {
+    "id": "blue-bouquet",
+    "name": "Blue bouquet",
+    "description": "Blue and white lilies wrapped in pale blue paper.",
+    "price_npr": null,
+    "image": "blue-lily-bouquet.webp",
+    "image_alt": "Close-up of blue lilies with white edges and small blue flowers",
+    "source_note": "Instagram reel caption: \"POV: you got his sweater and blue bouquet on 3rd December\""
+  },
+  {
+    "id": "blue-butterfly-bouquet",
+    "name": "Blue butterfly bouquet",
+    "description": "Blue flowers, white lilies and silver butterflies, with fairy lights.",
+    "price_npr": null,
+    "image": "butterfly-blue-bouquet.webp",
+    "image_alt": "Blue and white bouquet with silver butterflies and fairy lights",
+    "source_note": "Instagram reel caption: \"POV: He proposed you with this bouquet\". Name is provisional"
+  },
+  {
+    "id": "sunflower-bouquet",
+    "name": "Sunflower bouquet",
+    "description": "Sunflowers and white daisies.",
+    "price_npr": null,
+    "image": "sunflower-bouquet.webp",
+    "image_alt": "Handmade sunflowers and white daisies",
+    "source_note": "Instagram reel (no caption visible). Name is provisional"
+  },
+  {
+    "id": "light-up-plush-bouquets",
+    "name": "Light-up bouquets with plush",
+    "description": "Glowing bouquets, each with a Hello Kitty plush.",
+    "price_npr": null,
+    "image": "lightup-plush-bouquets.webp",
+    "image_alt": "Two glowing bouquets, one in peach and pink and one in blue, each with a Hello Kitty plush",
+    "source_note": "Instagram reel (no caption visible). Name is provisional"
+  },
+  {
+    "id": "light-up-butterfly-bouquet",
+    "name": "Light-up butterfly bouquet",
+    "description": "Orange lilies, pink flowers and butterflies, lit with fairy lights.",
+    "price_npr": null,
+    "image": "lightup-butterfly-bouquet.webp",
+    "image_alt": "Bouquet of orange lilies and pink flowers with butterflies, glowing in the dark",
+    "source_note": "Instagram reel caption: \"For he...\" (caption cut off). Name is provisional"
+  }
+]

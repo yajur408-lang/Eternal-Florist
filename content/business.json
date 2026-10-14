@@ -1,0 +1,26 @@
+{
+  "_comment": "Facts from the @oohflorist Instagram page. Keys under 'pending' are null until the owner confirms them; the site shows them as 'to confirm' and production refuses to start while required ones are null.",
+  "name": "oohflorist",
+  "tagline": "Eternal Florist",
+  "handle": "oohflorist",
+  "instagramUrl": "https://www.instagram.com/oohflorist/",
+  "sisterHandle": "oohribbonrolls",
+  "category": "Home Businesses",
+  "city": "Pokhara",
+  "bio": ["Where flowers bloom forever", "Customise your bouquet with your own unique design!"],
+  "whatsapp": "9806533832",
+  "whatsappIntl": "9779806533832",
+  "pending": {
+    "contactEmail": null,
+    "postalAddress": null,
+    "legalOwnerName": null,
+    "deliveryAreas": null,
+    "deliveryFees": null,
+    "leadTime": null,
+    "refundPolicy": null,
+    "cancellationPolicy": null,
+    "replyHours": null,
+    "dataRetention": null
+  },
+  "requiredForLaunch": ["contactEmail", "legalOwnerName", "deliveryAreas", "deliveryFees", "refundPolicy", "cancellationPolicy"]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "oohflorist-shop",
+  "version": "1.0.0",
+  "description": "Online shop for @oohflorist (Pokhara) with eSewa payments",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "migrate": "node --env-file-if-exists=.env src/migrate.js",
+    "reconcile": "node --env-file-if-exists=.env scripts/ops.js reconcile",
+    "make-admin": "node --env-file-if-exists=.env scripts/ops.js make-admin",
+    "backup": "node --env-file-if-exists=.env scripts/backup.js",
+    "restore": "node --env-file-if-exists=.env scripts/restore.js",
+    "check-content": "node scripts/ops.js check-content",
+    "test": "node --test tests/*.test.js",
+    "e2e": "node scripts/e2e.js"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.9",
+    "@node-rs/argon2": "^2.2.2",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "nodemailer": "^10.1.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@fontsource/figtree": "^5.3.0",
+    "@fontsource/fraunces": "^5.3.0",
+    "axe-core": "^4.14.0",
+    "playwright": "^1.64.0",
+    "sharp": "^0.35.5"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.9"
+  }
+}

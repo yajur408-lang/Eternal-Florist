@@ -1,0 +1,31 @@
+# Copy to .env for local development. NEVER commit .env. In production set these
+# in the hosting dashboard (Render / Railway environment variables), not in files.
+
+NODE_ENV=development
+PORT=3000
+BASE_URL=http://localhost:3000
+
+# Long random string, e.g. output of: node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+APP_SECRET=change-me
+
+# Postgres connection for the APP role (least privilege, see db/roles.sql).
+# Leave empty locally to use the built-in PGlite database in ./data/pglite.
+DATABASE_URL=
+# Only used by `npm run migrate`. Owner role. Do NOT set this on the deployed web service.
+MIGRATION_DATABASE_URL=
+
+# eSewa. ESEWA_MODE = sandbox | production | mock (mock = local test double, refused in production)
+ESEWA_MODE=sandbox
+# Sandbox values are eSewa's PUBLIC test values from developer.esewa.com.np/pages/Epay
+# (not real secrets). Replace with your merchant code and secret when going live.
+ESEWA_CODE=EPAYTEST
+ESEWA_SECRET=8gBm/:&EnhH.1/q
+
+# Email. Empty locally = emails are written to ./data/outbox instead of sent.
+# Example: smtps://USER:PASSWORD@smtp.provider.com:465
+SMTP_URL=
+MAIL_FROM=oohflorist <orders@your-domain.example>
+OWNER_NOTIFY_EMAIL=
+
+# Leading hex zeros required by the proof-of-work bot check (4 is about 65k hashes, about 1 second on a phone)
+POW_DIFFICULTY=4
